@@ -15,86 +15,61 @@ bl_info = {
     "tracker_url": "",
 }
 
-preview_collections = {}
-shader_previews = []
-shader_previews_loaded = False
 
+class ShaderLibrary:
+    def __init__(self):
+        self.previews = []
+        self.previews_loaded = False
 
-def find_preview_file(folder):
-    img_extensions = ['.jpg', '.jpeg', '.png']
-    files = os.listdir(folder)
-    files = list(filter(lambda x: x.startswith("preview"), files))
-    if not files:
+    def find_preview_file(self, folder):
+        img_extensions = ['.jpg', '.jpeg', '.png']
+        files = os.listdir(folder)
+        files = list(filter(lambda x: x.startswith("preview"), files))
+        if not files:
+            return "", False
+        for file in files:
+            filename, extension = os.path.splitext(file)
+            if extension in img_extensions:
+                file = os.path.join(folder, file)
+                return file, True
         return "", False
-    for file in files:
-        filename, extension = os.path.splitext(file)
-        if extension in img_extensions:
-            file = os.path.join(folder, file)
-            return file, True
-    return "", False
 
+    def get_folders_in(self, folder):
+        folders = os.listdir(folder)
+        folders = [os.path.join(folder, x) for x in folders]
+        folders = list(filter(lambda x: os.path.isdir(x), folders))
+        return folders
 
-def get_folders_in(folder):
-    folders = os.listdir(folder)
-    folders = list(map(lambda x: os.path.join(folder, x), folders))
-    folders = list(filter(lambda x: os.path.isdir(x), folders))
-    return folders
+    def get_previews_from_folders(self, folders, preview_collection):
+        previews = []
+        i = 0
+        for folder in folders:
+            preview_file, found = self.find_preview_file(folder)
+            if not found:
+                continue
+            image_name = os.path.basename(os.path.normpath(folder))
+            image_path = os.path.join(folder, preview_file)
+            image = preview_collection.load(image_name, image_path, 'IMAGE')
+            previews.append(
+                (image_name, image_name, image_name, image.icon_id, i))
+            i += 1
+        return previews
 
+    def generate_previews(self, pcoll):
+        folder = pcoll.images_dir
+        vehicles = self.get_folders_in(folder)
+        items = self.get_previews_from_folders(vehicles, pcoll)
+        return items
 
-def get_previews_from_folders(folders, preview_collection):
-    previews = []
-    i = 0
-    for folder in folders:
-        preview_file, found = find_preview_file(folder)
-        if not found:
-            continue
-        image_name = os.path.basename(os.path.normpath(folder))
-        image_path = os.path.join(folder, preview_file)
-        image = preview_collection.load(image_name, image_path, 'IMAGE')
-        previews.append((image_name, image_name, image_name, image.icon_id, i))
-        i += 1
-    return previews
-
-
-def generate_previews(pcoll):
-    folder = pcoll.images_dir
-    vehicles = get_folders_in(folder)
-    items = get_previews_from_folders(vehicles, pcoll)
-    return items
-
-
-def generate_shader_previews():
-    global shader_previews_loaded, shader_previews
-    if not shader_previews_loaded:
-        pcoll = bpy.utils.previews.new()
-        pcoll.images_dir = os.path.dirname(
-            os.path.normpath(__file__)) + "/data/shaders"
-        materials = get_folders_in(pcoll.images_dir)
-        shader_previews = get_previews_from_folders(materials, pcoll)
-        shader_previews_loaded = True
-        return shader_previews
-
-
-def on_material_icon_clicked(self, context):
-    scene = context.scene
-    tool_settings = scene.tool_settings
-    scene.selected_material = scene.material_previews
-
-
-def custom_material_category_load(self, context):
-    scene = context.scene
-    tool_settings = scene.tool_settings
-    category = tool_settings.car_paint_type
-    previews = {
-        "SHADERS": shader_previews,
-    }
-    items = previews[category]
-
-    bpy.types.Scene.material_previews = bpy.props.EnumProperty(
-        items=items,
-        update=on_material_icon_clicked
-    )
-    scene.selected_material = scene.material_previews
+    def generate_shader_previews(self):
+        if not self.previews_loaded:
+            pcoll = bpy.utils.previews.new()
+            pcoll.images_dir = os.path.dirname(
+                os.path.normpath(__file__)) + "/data/shaders"
+            materials = self.get_folders_in(pcoll.images_dir)
+            self.previews = self.get_previews_from_folders(materials, pcoll)
+            self.previews_loaded = True
+            return self.previews
 
 
 def find_blend_file(folder):
@@ -105,16 +80,21 @@ def find_blend_file(folder):
     return os.path.join(folder, files[0]), True
 
 
-class KLibrarySettings(bpy.types.PropertyGroup):
+def on_material_icon_clicked(self, context):
+    scene = context.scene
+    tool_settings = scene.tool_settings
+    scene.selected_material = scene.material_previews
 
-    generate_shader_previews()
+
+class KLibrarySettings(bpy.types.PropertyGroup):
+    shader_library = ShaderLibrary()
 
     bpy.types.Scene.material_previews = bpy.props.EnumProperty(
-        items=shader_previews,
+        items=shader_library.generate_shader_previews(),
         update=on_material_icon_clicked
     )
     bpy.types.Scene.selected_material = bpy.props.StringProperty(
-        default=shader_previews[0][0]
+        default=shader_library.previews[0][0]
     )
 
 
@@ -124,12 +104,13 @@ class KLIBRARY_OT_import_material(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        shader_library = ShaderLibrary()
         scene = context.scene
         tool_settings = scene.tool_settings
         material_name = scene.selected_material
 
-        material_folder = os.path.dirname(os.path.normpath(__file__)) \
-            + "/data/shaders/" + material_name
+        material_folder = os.path.dirname(os.path.normpath(
+            __file__)) + "/data/shaders/" + material_name
 
         material_blend, found = find_blend_file(material_folder)
         if not found:
@@ -143,7 +124,7 @@ class KLIBRARY_OT_import_material(bpy.types.Operator):
         if active_obj:
             material = bpy.data.materials.get(material_name)
             if material and material_name not in active_obj.data.materials:
-                    active_obj.data.materials.append(material)
+                active_obj.data.materials.append(material)
         return {'FINISHED'}
 
 

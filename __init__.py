@@ -86,7 +86,7 @@ def custom_material_category_load(self, context):
     tool_settings = scene.tool_settings
     category = tool_settings.car_paint_type
     previews = {
-        "METALLIC": shader_previews,
+        "SHADERS": shader_previews,
     }
     items = previews[category]
 
@@ -95,6 +95,14 @@ def custom_material_category_load(self, context):
         update=on_material_icon_clicked
     )
     scene.selected_material = scene.material_previews
+
+
+def find_blend_file(folder):
+    files = os.listdir(folder)
+    files = list(filter(lambda x: x.endswith(".blend"), files))
+    if not files:
+        return "", False
+    return os.path.join(folder, files[0]), True
 
 
 class KLibrarySettings(bpy.types.PropertyGroup):
@@ -116,30 +124,26 @@ class KLIBRARY_OT_import_material(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Define the path to the blend file containing the custom node
-        selected_material = context.scene.selected_material
-        source_file = os.path.join(os.path.dirname(
-            __file__), f"data\shaders\{selected_material}", f"{selected_material}.blend")
+        scene = context.scene
+        tool_settings = scene.tool_settings
+        material_name = scene.selected_material
 
-        # Check if the file exists
-        if not os.path.isfile(source_file):
-            self.report({'ERROR'}, "File not found: {}".format(source_file))
-            return {'CANCELLED'}
+        material_folder = os.path.dirname(os.path.normpath(__file__)) \
+            + "/data/shaders/" + material_name
 
-        # Import the blend file
-        with bpy.data.libraries.load(source_file, link=False) as (data_from, data_to):
-            for node_group_name in data_from.node_groups:
-                if node_group_name not in data_to.node_groups:
-                    data_to.node_groups += [node_group_name]
-                    # Check if the node group was successfully loaded
-                    if not data_to.node_groups or not data_to.node_groups[0]:
-                        self.report(
-                            {'ERROR'}, "Failed to load the node group: {}".format(node_group_name))
-                        return {'CANCELLED'}
+        material_blend, found = find_blend_file(material_folder)
+        if not found:
+            return {"CANCELLED"}
 
-                    # Report successful import
-                    self.report(
-                        {'INFO'}, "Successfully appended node group: {}".format(node_group_name))
+        with bpy.data.libraries.load(material_blend, link=False) as (data_src, data_dst):
+            data_dst.materials = data_src.materials
+
+        # Assign the imported material to the active object's material slot
+        active_obj = context.active_object
+        if active_obj:
+            material = bpy.data.materials.get(material_name)
+            if material and material_name not in active_obj.data.materials:
+                    active_obj.data.materials.append(material)
         return {'FINISHED'}
 
 

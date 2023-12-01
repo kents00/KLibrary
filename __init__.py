@@ -121,11 +121,15 @@ class KLIBRARY_OT_import_material(bpy.types.Operator):
 
         # Assign the imported material to the active object's material slot
         active_obj = context.active_object
-        if active_obj:
+        if active_obj and active_obj.type == 'MESH':
             material = bpy.data.materials.get(material_name)
             if material and material_name not in active_obj.data.materials:
                 active_obj.data.materials.append(material)
-        return {'FINISHED'}
+            return {'FINISHED'}
+        else:
+            self.report(
+                {'ERROR'}, "Select a mesh object to apply the material.")
+            return {'CANCELLED'}
 
 
 class KLibraryPanel(bpy.types.Panel):
@@ -136,12 +140,17 @@ class KLibraryPanel(bpy.types.Panel):
     bl_region_type = "UI"
 
     def draw(self, context):
+        pcoll = KLibrary_Layers_Preview["main"]
+        kofi = pcoll["kofi"]
+        deviant = pcoll["deviant"]
+        github = pcoll["github"]
+
         scene = context.scene
         layout = self.layout
 
         box = layout.box()
         row = box.row()
-        row.label(text="KLibrary Shaders")
+        row.label(text="Shaders")
         row = box.row()
         row.template_icon_view(
             context.scene, "material_previews", show_labels=True)
@@ -152,7 +161,41 @@ class KLibraryPanel(bpy.types.Panel):
         row.scale_y = 2.0
         row.operator("klibrary.import_material",
                      text="Import Selected Material")
+        box = layout.box()
+        box.scale_y = 1.5
+        box.scale_x = 1.5
+        kofi = box.operator(
+            'wm.url_open',
+            text='KO-FI',
+            icon_value=kofi.icon_id,
+            emboss=False
+        )
+        kofi.url = 'https://ko-fi.com/kents_workof_art'
 
+        box = layout.box()
+        box.scale_y = 1.5
+        box.scale_x = 1.5
+        deviant = box.operator(
+            'wm.url_open',
+            text='DEVIANT ART',
+            icon_value=deviant.icon_id,
+            emboss=False
+        )
+        deviant.url = 'https://www.deviantart.com/kents001'
+
+        box = layout.box()
+        box.scale_y = 1.5
+        box.scale_x = 1.5
+        github = box.operator(
+            'wm.url_open',
+            text='GITHUB',
+            icon_value=github.icon_id,
+            emboss=False
+        )
+        github.url = 'https://github.com/kents00'
+
+
+KLibrary_Layers_Preview = {}
 
 classes = (
     KLibrarySettings,
@@ -164,8 +207,24 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    pcoll = bpy.utils.previews.new()
+
+    absolute_path = os.path.join(os.path.dirname(__file__), 'data/')
+    relative_path = "icons"
+    path = os.path.join(absolute_path, relative_path)
+    pcoll.load("kofi", os.path.join(path, "kofi.png"), 'IMAGE')
+    pcoll.load("deviant", os.path.join(path, "deviantart.png"), 'IMAGE')
+    pcoll.load("github", os.path.join(path, "github.png"), 'IMAGE')
+    KLibrary_Layers_Preview["main"] = pcoll
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    for pcoll in KLibrary_Layers_Preview.values():
+        bpy.utils.previews.remove(pcoll)
+    KLibrary_Layers_Preview.clear()
+
+if __name__ == "__main__":
+    register()

@@ -5,7 +5,7 @@ import os
 bl_info = {
     "name": "KLibrary",
     "blender": (3, 4, 1),
-    "version": (4, 5),
+    "version": (1, 0),
     "category": "3D View",
     "author": "Kent Edoloverio",
     "location": "3D View > UI Templates",

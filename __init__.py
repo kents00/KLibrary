@@ -71,23 +71,6 @@ class ShaderLibrary:
             self.previews_loaded = True
             return self.previews
 
-    def generate_shader_searchpreviews(self, context):
-        if not self.previews_loaded:
-            pcoll = bpy.utils.previews.new()
-            pcoll.images_dir = os.path.dirname(
-                os.path.normpath(__file__)) + "/data/shaders"
-            materials = self.get_folders_in(pcoll.images_dir)
-            self.previews = self.get_previews_from_folders(materials, pcoll)
-            self.previews_loaded = True
-            search_string = bpy.context.scene.material_search.lower()
-            if search_string is not None:
-                filtered_previews = [
-                    preview for preview in self.previews if search_string.lower() in preview[0].lower()]
-                return filtered_previews
-            else:
-                return self.previews
-
-
 def find_blend_file(folder):
     files = os.listdir(folder)
     files = list(filter(lambda x: x.endswith(".blend"), files))
@@ -100,22 +83,10 @@ def on_material_icon_clicked(self, context):
     scene = context.scene
     tool_settings = scene.tool_settings
     scene.selected_material = scene.material_previews
-    scene.selected_material = scene.material_search
 
 
 class KLibrarySettings(bpy.types.PropertyGroup):
     shader_library = ShaderLibrary()
-
-    def update_material_search_items(self, context):
-        self.material_previews = self.shader_library.generate_shader_previews(
-            context)
-
-    bpy.types.Scene.material_search = bpy.props.StringProperty(
-        name="",
-        description="Search for materials",
-        default="",
-        update=update_material_search_items,
-    )
 
     bpy.types.Scene.material_previews = bpy.props.EnumProperty(
         items=shader_library.generate_shader_previews(),
@@ -182,8 +153,6 @@ class KLibraryPanel(bpy.types.Panel):
         box = layout.box()
         row = box.row()
         row.label(text="Shaders")
-        row = box.row()
-        row.prop(scene, "material_search", icon="VIEWZOOM")
         row = box.row()
         row.template_icon_view(
             context.scene, "material_previews", show_labels=True)

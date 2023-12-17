@@ -152,7 +152,7 @@ class KLibraryPanel(bpy.types.Panel):
 
         box = layout.box()
         row = box.row()
-        row.label(text="Shaders")
+        row.label(text="Materials")
         row = box.row()
         row.template_icon_view(
             context.scene, "material_previews", show_labels=True)
@@ -162,7 +162,7 @@ class KLibraryPanel(bpy.types.Panel):
         row = box.row()
         row.scale_y = 2.0
         row.operator("klibrary.import_material",
-                     text="Import Selected Material")
+                     text="Import Material")
         box = layout.box()
         box.scale_y = 1.5
         box.scale_x = 1.5

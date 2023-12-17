@@ -1,6 +1,6 @@
 import bpy
-import bpy.utils.previews
 import os
+import bpy.utils.previews
 
 bl_info = {
     "name": "KLibrary",
@@ -12,7 +12,7 @@ bl_info = {
     "description": "Collection of materials in one single click",
     "warning": "",
     "wiki_url": "",
-    "tracker_url": "",
+    "tracker_url": "https://github.com/kents00/KLibrary",
 }
 
 

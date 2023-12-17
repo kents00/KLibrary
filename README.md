@@ -2,7 +2,7 @@
 
 Collection of Shaders in Blender
 
-This blender addon aims to create a diverse collection of shaders that have been contributed by various creators. This will provide artists with extensive access to a wide variety of shaders that can be used in their scenes, allowing for greater creativity and customization options.↵Currently, I have added 10 anime shaders which are fully customizable according to your specific requirements.
+This blender addon aims to create a diverse collection of shaders that have been contributed by various creators. This will provide artists with extensive access to a wide variety of shaders that can be used in their scenes, allowing for greater creativity and customization options.Currently, I have added 10 anime shaders which are fully customizable according to your specific requirements.
 
 ![Preview](https://github.com/kents00/KLibrary/assets/69900896/808d6e33-fdce-4ca7-939a-71b2ed0c4b95)
 

@@ -9,7 +9,7 @@ bl_info = {
     "category": "3D View",
     "author": "Kent Edoloverio",
     "location": "3D View > UI Templates",
-    "description": "Collection of Shaders in one single click",
+    "description": "Collection of materials in one single click",
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
@@ -65,7 +65,7 @@ class ShaderLibrary:
         if not self.previews_loaded:
             pcoll = bpy.utils.previews.new()
             pcoll.images_dir = os.path.dirname(
-                os.path.normpath(__file__)) + "/data/shaders"
+                os.path.normpath(__file__)) + "/data/materials"
             materials = self.get_folders_in(pcoll.images_dir)
             self.previews = self.get_previews_from_folders(materials, pcoll)
             self.previews_loaded = True
@@ -112,7 +112,7 @@ class KLIBRARY_OT_import_material(bpy.types.Operator):
         material_name = scene.selected_material
 
         material_folder = os.path.dirname(os.path.normpath(
-            __file__)) + "/data/shaders/" + material_name
+            __file__)) + "/data/materials/" + material_name
 
         material_blend, found = find_blend_file(material_folder)
         if not found:
